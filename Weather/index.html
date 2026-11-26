@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070d19">
+  <meta name="description" content="SkyCast - Live weather dashboard with forecasts, air quality and weather insights.">
+
+  <title>SkyCast| Live Weather Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body>
+
+  <!-- BACKGROUND -->
+  <div class="ambient-bg" id="ambientBg">
+    <div class="orb orb-one"></div>
+    <div class="orb orb-two"></div>
+    <div class="orb orb-three"></div>
+    <div class="grid-overlay"></div>
+    <div class="stars"></div>
+  </div>
+
+  <div class="weather-effects" id="weatherEffects"></div>
+
+  <!-- MAIN APP -->
+  <main class="app-shell">
+
+    <!-- HEADER -->
+    <header class="header">
+
+      <div class="brand">
+        <div class="brand-icon">☁</div>
+
+        <div class="brand-text">
+          <h1>Sky<span>Cast</span></h1>
+          <small>WEATHER STATION</small>
+        </div>
+      </div>
+
+      <div class="top-controls">
+
+        <button id="unitToggle" class="unit-toggle" type="button">
+          °C
+        </button>
+
+        <button id="refreshBtn" class="icon-button" type="button" aria-label="Refresh weather">
+          ↻
+        </button>
+
+      </div>
+
+    </header>
+
+    <!-- SEARCH -->
+    <section class="search-section">
+
+      <form id="form" class="search-box">
+
+        <span class="search-icon">⌕</span>
+
+        <input
+          type="text"
+          id="city"
+          placeholder="Search city..."
+          autocomplete="off"
+          required
+        >
+
+        <button type="submit" id="searchBtn">
+          Search
+        </button>
+
+      </form>
+
+      <button id="locationBtn" class="location-button" type="button">
+        ◎ Use My Location
+      </button>
+
+      <p id="status" class="status-text" aria-live="polite">
+        Search a city to explore live weather
+      </p>
+
+    </section>
+
+    <!-- WELCOME SECTION -->
+<section id="welcomeSection" class="welcome-section panel">
+
+  <div class="welcome-content">
+    <span class="eyebrow">WELCOME TO SKYCAST</span>
+
+    <h2>Weather, at a glance.</h2>
+
+    <p>
+      Explore the weather around the world.
+      Stay informed and plan your day smarter.
+    </p>
+
+    <div class="welcome-icon">🌤️</div>
+
+    <h3>Your weather journey starts here.</h3>
+    <p class="welcome-subtitle">
+      Search a city above to discover its live weather.
+    </p>
+  </div>
+
+  <div class="welcome-features">
+
+    <div class="welcome-feature">
+      <span>🌦️</span>
+      <strong>Live Forecast</strong>
+      <small>Real-time weather</small>
+    </div>
+
+    <div class="welcome-feature">
+      <span>🌍</span>
+      <strong>Weather Maps</strong>
+      <small>Explore the world</small>
+    </div>
+
+    <div class="welcome-feature">
+      <span>🌿</span>
+      <strong>Air Quality</strong>
+      <small>Check AQI levels</small>
+    </div>
+
+  </div>
+
+</section>
+
+    <!-- WEATHER CONTENT -->
+    <div id="weatherContent" hidden>
+
+      <!-- HERO WEATHER -->
+      <section class="hero-card panel">
+
+        <div class="hero-top">
+
+          <div>
+            <span class="eyebrow">CURRENT WEATHER</span>
+            <h2 id="placeName">--</h2>
+            <p id="localDate">--</p>
+          </div>
+
+          <span id="heroIcon" class="hero-icon">🌤️</span>
+
+        </div>
+
+        <div class="temperature-area">
+
+          <div class="temperature-line">
+            <strong id="temperature">--</strong>
+            <span id="degreeMark">°C</span>
+          </div>
+
+          <p id="condition">--</p>
+
+        </div>
+
+        <div class="hero-side">
+
+          <p>
+            Feels like
+            <strong id="feelsLike">--</strong>
+          </p>
+
+          <p>
+            Today's High
+            <strong id="todayHigh">--</strong>
+          </p>
+
+          <p>
+            Today's Low
+            <strong id="todayLow">--</strong>
+          </p>
+
+        </div>
+
+        <div class="hero-bottom">
+
+          <span>
+            ☔ Rain chance:
+            <strong id="rainChance">--</strong>
+          </span>
+
+          <span class="live-indicator">
+            <span class="live-dot"></span>
+            LIVE WEATHER
+          </span>
+
+        </div>
+
+      </section>
+
+      <!-- HOURLY FORECAST -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">NEXT 24 HOURS</span>
+            <h2>Hourly Forecast</h2>
+          </div>
+          <span>◷</span>
+        </div>
+
+        <div id="hourlyForecast" class="hourly-list"></div>
+
+      </section>
+
+      <!-- TEMPERATURE CHART -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">TEMPERATURE TREND</span>
+            <h2>Next 12 Hours</h2>
+          </div>
+          <span>⌁</span>
+        </div>
+
+        <div class="chart-area">
+
+          <svg
+            id="temperatureChart"
+            viewBox="0 0 600 180"
+            preserveAspectRatio="none"
+            role="img"
+            aria-label="Hourly temperature chart"
+          >
+
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#39d5ff" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#39d5ff" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <path id="chartFill" fill="url(#chartGradient)"></path>
+
+            <path
+              id="chartLine"
+              fill="none"
+              stroke="#39d5ff"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></path>
+
+            <g id="chartDots"></g>
+
+          </svg>
+
+        </div>
+
+      </section>
+
+      <!-- 7 DAY FORECAST -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">UPCOMING DAYS</span>
+            <h2>7-Day Forecast</h2>
+          </div>
+          <span>▦</span>
+        </div>
+
+        <div id="dailyForecast" class="daily-forecast"></div>
+
+      </section>
+
+      <!-- WEATHER DETAILS -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">WEATHER INFORMATION</span>
+            <h2>Weather Details</h2>
+          </div>
+          <span>◈</span>
+        </div>
+
+        <div class="details-grid">
+
+          <div class="detail-card">
+            <span>🌡️</span>
+            <small>Feels Like</small>
+            <strong id="detailFeels">--</strong>
+          </div>
+
+          <div class="detail-card">
+            <span>💧</span>
+            <small>Humidity</small>
+            <strong id="humidity">--</strong>
+          </div>
+
+          <div class="detail-card">
+            <span>💨</span>
+            <small>Wind Speed</small>
+            <strong id="wind">--</strong>
+            <small id="windDirection">--</small>
+          </div>
+
+          <div class="detail-card">
+            <span>☀️</span>
+            <small>UV Index</small>
+            <strong id="uv">--</strong>
+            <small id="uvHint">--</small>
+          </div>
+
+          <div class="detail-card">
+            <span>👁️</span>
+            <small>Visibility</small>
+            <strong id="visibility">--</strong>
+          </div>
+
+          <div class="detail-card">
+            <span>◉</span>
+            <small>Pressure</small>
+            <strong id="pressure">--</strong>
+          </div>
+
+          <div class="detail-card">
+            <span>🌅</span>
+            <small>Sunrise</small>
+            <strong id="sunrise">--</strong>
+          </div>
+
+          <div class="detail-card">
+            <span>🌇</span>
+            <small>Sunset</small>
+            <strong id="sunset">--</strong>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- AIR QUALITY -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">AIR MONITOR</span>
+            <h2>Air Quality Index</h2>
+          </div>
+          <span>◉</span>
+        </div>
+
+        <div class="aqi-main">
+
+          <div class="aqi-score">
+            <strong id="aqi">--</strong>
+            <span id="aqiLabel">Loading</span>
+          </div>
+
+          <div class="aqi-meter">
+            <div id="aqiMeterFill"></div>
+          </div>
+
+        </div>
+
+        <div class="air-details">
+
+          <div>
+            <small>PM 2.5</small>
+            <strong id="pm25">--</strong>
+          </div>
+
+          <div>
+            <small>PM 10</small>
+            <strong id="pm10">--</strong>
+          </div>
+
+          <div>
+            <small>Ozone</small>
+            <strong id="ozone">--</strong>
+          </div>
+
+        </div>
+
+        <p id="airAdvice">Air quality information will appear here.</p>
+
+      </section>
+
+      <!-- ACTIVITIES -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">PLAN YOUR DAY</span>
+            <h2>Outdoor Activities</h2>
+          </div>
+          <span>✦</span>
+        </div>
+
+        <div id="activityGrid" class="activity-grid"></div>
+
+      </section>
+
+      <!-- ADVISOR -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">SMART SUGGESTIONS</span>
+            <h2>Weather Advisor</h2>
+          </div>
+          <span>✧</span>
+        </div>
+
+        <div class="advisor-grid">
+
+          <div class="advisor-card">
+            <span id="outfitIcon">👕</span>
+            <div>
+              <small>OUTFIT ADVISOR</small>
+              <p id="outfitAdvice">--</p>
+            </div>
+          </div>
+
+          <div class="advisor-card">
+            <span id="umbrellaIcon">☔</span>
+            <div>
+              <small>UMBRELLA ADVISOR</small>
+              <p id="umbrellaAdvice">--</p>
+            </div>
+          </div>
+
+        </div>
+
+        <p id="outdoorAdvice" class="outdoor-advice">--</p>
+
+      </section>
+
+      <!-- SUN TIMES -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">DAYLIGHT TRACKER</span>
+            <h2>Sunrise & Sunset</h2>
+          </div>
+          <span>☼</span>
+        </div>
+
+        <div class="sun-grid">
+
+          <div class="sun-card">
+            <span>🌅</span>
+            <div>
+              <small>Sunrise</small>
+              <strong id="sunriseTime">--</strong>
+              <p id="sunriseCountdown">--</p>
+            </div>
+          </div>
+
+          <div class="sun-card">
+            <span>🌇</span>
+            <div>
+              <small>Sunset</small>
+              <strong id="sunsetTime">--</strong>
+              <p id="sunsetCountdown">--</p>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- WEATHER INSIGHTS -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">FORECAST BASED</span>
+            <h2>Weather Insights</h2>
+          </div>
+          <span>⚑</span>
+        </div>
+
+        <div id="weatherAlerts" class="alerts-list">
+          No weather insights available.
+        </div>
+
+        <p class="section-note">
+          These are automated forecast-based suggestions, not official weather warnings.
+        </p>
+
+      </section>
+      <!-- WEATHER MAP -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">LIVE WEATHER EXPLORER</span>
+            <h2>Weather Map</h2>
+          </div>
+          <span>🌍</span>
+        </div>
+
+        <div class="map-controls">
+          <button class="map-tab active" data-layer="precipitation" type="button">
+            🌧️ Rain
+          </button>
+
+          <button class="map-tab" data-layer="clouds" type="button">
+            ☁️ Clouds
+          </button>
+
+          <button class="map-tab" data-layer="temperature" type="button">
+            🌡️ Temperature
+          </button>
+        </div>
+        <div class="map-theme-controls">
+  <button id="mapDarkBtn" class="map-theme-btn active" type="button">
+    🌙 Dark
+  </button>
+
+  <button id="mapLightBtn" class="map-theme-btn" type="button">
+    ☀️ Light
+  </button>
+</div>
+
+        <div class="weather-map-container">
+          <div id="weatherMap"></div>
+        </div>
+        <div class="temperature-legend" id="temperatureLegend" style="display: none;">
+  <span>Cooler</span>
+  <div class="temperature-gradient"></div>
+  <span>Warmer</span>
+</div>
+
+        <p id="mapStatus" class="section-note">
+          Weather map will appear here.
+        </p>
+
+      </section>
+
+      <!-- CITY COMPARISON -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">EXPLORE OTHER CITIES</span>
+            <h2>City Comparison</h2>
+          </div>
+          <span>⇄</span>
+        </div>
+
+        <div class="compare-form">
+
+          <input
+            type="text"
+            id="compareCity"
+            placeholder="Enter another city..."
+          >
+
+          <button id="compareBtn" type="button">
+            Compare
+          </button>
+
+        </div>
+
+        <p id="compareStatus" class="status-text"></p>
+
+        <div id="comparisonResult" class="comparison-grid"></div>
+
+      </section>
+
+      <!-- SHARE WEATHER -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">SAVE YOUR WEATHER</span>
+            <h2>Weather Card</h2>
+          </div>
+          <span>▣</span>
+        </div>
+
+        <div class="share-card" id="shareCard">
+
+          <div class="share-header">
+            <strong>SkyCast</strong>
+            <small>LIVE WEATHER</small>
+          </div>
+
+          <p id="shareCity">--</p>
+
+          <div class="share-main">
+            <span id="shareIcon">🌤️</span>
+            <strong id="shareTemp">--</strong>
+          </div>
+
+          <p id="shareCondition">--</p>
+          <small id="shareDate">--</small>
+
+          <div class="share-details">
+
+            <div>
+              <small>Feels Like</small>
+              <strong id="shareFeels">--</strong>
+            </div>
+
+            <div>
+              <small>Humidity</small>
+              <strong id="shareHumidity">--</strong>
+            </div>
+
+            <div>
+              <small>Wind</small>
+              <strong id="shareWind">--</strong>
+            </div>
+
+          </div>
+
+        </div>
+
+        <button id="downloadCard" class="download-button" type="button">
+          ↓ Download Weather Card
+        </button>
+
+      </section>
+
+      <!-- SEARCH HISTORY -->
+      <section class="panel section-panel">
+
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">YOUR RECENT CITIES</span>
+            <h2>Search History</h2>
+          </div>
+
+          <button id="clearHistory" class="clear-button" type="button">
+            Clear
+          </button>
+        </div>
+
+        <div id="historyList" class="history-list">
+          No recent searches yet.
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <p>SkyCast · Live Weather Dashboard</p>
+      <small>Weather data powered by Open-Meteo</small>
+    </footer>
+
+  </main>
+
+  <!-- DOWNLOAD LIBRARY -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- MAIN JAVASCRIPT -->
+  <script src="script.js"></script>
+
+</body>
+</html>
